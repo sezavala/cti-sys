@@ -57,16 +57,19 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
             result_grid.loc[row.cti_id, row.session_date] = True
     
+    # Reset index so cti_id becomes a normal column
     final_df = result_grid.reset_index()
 
-    # 2. Force headers to YYYY-MM-DD strings
+    # 1. Force headers to YYYY-MM-DD strings (or plain str for non-dates)
     final_df.columns = [
-        col.strftime('%Y-%m-%d') if hasattr(col, 'strftime') else str(col) 
+        col.strftime('%Y-%m-%d') if hasattr(col, 'strftime') else str(col)
         for col in final_df.columns
     ]
 
-    # 3. Force EVERY cell value to a string
-    # This kills the "Timestamp is not JSON serializable" error for good
+    # 2. Ensure index is a simple RangeIndex and not a DatetimeIndex
+    final_df.index = range(len(final_df))
+
+    # 3. Force EVERY cell value to a string, so no pandas.Timestamp leaks through
     final_df = final_df.astype(str)
 
     return final_df
