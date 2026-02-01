@@ -47,6 +47,8 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         .where(Attendance.session_start.between(start_date, end_date))
     )
 
+    print(attendance_query)
+
     attendance_frame = pandas.read_sql(attendance_query, eng)
     if not attendance_frame.empty:
         attendance_frame["session_date"] = pandas.to_datetime(attendance_frame["session_date"])
