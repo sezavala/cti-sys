@@ -57,16 +57,19 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
             result_grid.loc[row.cti_id, row.session_date] = True
     
-    result_grid.index = result_grid.index.astype(str)
+    final_df = result_grid.reset_index()
 
-    result_grid.columns = [
+    # 2. Force headers to YYYY-MM-DD strings
+    final_df.columns = [
         col.strftime('%Y-%m-%d') if hasattr(col, 'strftime') else str(col) 
-        for col in result_grid.columns
+        for col in final_df.columns
     ]
 
-    result_grid = result_grid.astype(str) 
+    # 3. Force EVERY cell value to a string
+    # This kills the "Timestamp is not JSON serializable" error for good
+    final_df = final_df.astype(str)
 
-    return result_grid
+    return final_df
 
 def fetch_cti_ids_from_sheet(spreadsheet_id: str, worksheet_name: str, gc: gspread.client.Client) -> List[int]:
     sh = gc.open_by_key(spreadsheet_id)
