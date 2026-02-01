@@ -50,6 +50,8 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         )
     )
 
+    print(attendance_query)
+
     attendance_frame = pandas.read_sql(attendance_query, eng)
     print(attendance_frame)
     if not attendance_frame.empty:
