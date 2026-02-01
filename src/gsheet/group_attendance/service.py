@@ -53,20 +53,18 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
 
     attendance_frame["session_date"] = pandas.to_datetime(attendance_frame["session_date"])
 
-    # 5) Mark True where there was attendance
     for row in attendance_frame.itertuples(index=False):
-        # row.cti_id, row.session_date
         if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
             result_grid.loc[row.cti_id, row.session_date] = True
     
+    result_grid.index = result_grid.index.astype(str)
+
     result_grid.columns = [
         col.strftime('%Y-%m-%d') if hasattr(col, 'strftime') else str(col) 
         for col in result_grid.columns
     ]
 
-    result_grid = result_grid.fillna('') 
-
-    result_grid.index = result_grid.index.astype(str)
+    result_grid = result_grid.astype(str) 
 
     return result_grid
 
