@@ -59,7 +59,12 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
             result_grid.loc[row.cti_id, row.session_date] = True
     
-    result_grid.columns = result_grid.columns.map(lambda x: x.strftime('%Y-%m-%d') if hasattr(x, 'strftime') else str(x))
+    result_grid.columns = [
+        col.strftime('%Y-%m-%d') if hasattr(col, 'strftime') else str(col) 
+        for col in result_grid.columns
+    ]
+
+    result_grid.index = result_grid.index.astype(str)
 
     return result_grid
 
