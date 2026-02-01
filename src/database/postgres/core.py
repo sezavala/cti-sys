@@ -11,9 +11,9 @@ class Base(DeclarativeBase):
 # Toggle determines whether to load an env file, or if env variables are already loaded
 # Gunicorn will not run on Windows, so the path does not need to be system agnostic
 # Default False (cloud environment) TODO: Move this elsewhere that's more universal
-env_required = False
+env_required = True
 if env_required:
-    load_dotenv(dotenv_path="./../../.env")
+    load_dotenv(dotenv_path=".env")
 
 # Engine & Session Configuration
 # Note that currently, sessions are the only way to interface with the database

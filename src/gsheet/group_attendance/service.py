@@ -103,6 +103,8 @@ def fetch_cti_ids_from_sheet(spreadsheet_id: str, worksheet_name: str, gc: gspre
                 # Skip
                 continue
     
+    worksheet.clear()
+    
     return data
 
 def fetch_cti_emails(eng: Engine, cti_ids: List[int]) -> Dict[int, str]:
