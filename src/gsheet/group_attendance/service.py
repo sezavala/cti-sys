@@ -101,6 +101,7 @@ def fetch_cti_emails(eng: Engine, cti_ids: List[int]) -> Dict[int, str]:
 
     email_frame = pandas.read_sql(attendance_query, eng)
     for row in email_frame.iterrows():
+        print(row)
         ids_to_email[row.cti_id] = row.email
 
     return ids_to_email
