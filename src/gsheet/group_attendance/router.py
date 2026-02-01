@@ -9,7 +9,7 @@ from src.config import settings
 from src.database.postgres.core import make_session
 from src.database.postgres.core import engine as CONN
 import src.gsheet.utils as utils
-import src.gsheet.refresh.attendance.service as service
+import src.gsheet.group_attendance.service as service
 
 router = APIRouter()
 
