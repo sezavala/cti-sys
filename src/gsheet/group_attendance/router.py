@@ -37,7 +37,6 @@ def refresh_group_attendance(spreadsheet_id: str, spreadsheet_name: str, start_d
 
         # pass CTI IDs into the group attendance service
         attendance_data = service.fetch_group_attendance(CONN, start_date, end_date, cti_ids)
-        print(attendance_data)
 
         return utils.write_to_gsheet(attendance_data, spreadsheet_name, gc, key)
 

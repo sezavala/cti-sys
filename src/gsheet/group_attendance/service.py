@@ -48,25 +48,26 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
     )
 
     attendance_frame = pandas.read_sql(attendance_query, eng)
-    if attendance_frame.empty:
-        return result_grid
+    if not attendance_frame.empty:
+        attendance_frame["session_date"] = pandas.to_datetime(attendance_frame["session_date"])
 
-    attendance_frame["session_date"] = pandas.to_datetime(attendance_frame["session_date"])
+        for row in attendance_frame.itertuples(index=False):
+            if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
+                result_grid.loc[row.cti_id, row.session_date] = True
 
-    
-    for row in attendance_frame.itertuples(index=False):
-        if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
-            result_grid.loc[row.cti_id, row.session_date] = True
-    
+    # From here on, ALWAYS normalize before returning
     final_df = result_grid.reset_index()
 
+    # Normalize headers
     final_df.columns = [
         col.strftime("%Y-%m-%d") if hasattr(col, "strftime") else str(col)
         for col in final_df.columns
     ]
 
+    # Simple integer index
     final_df.index = range(len(final_df))
 
+    # Everything as string so gspread/JSON is happy
     final_df = final_df.astype(str)
 
     return final_df
