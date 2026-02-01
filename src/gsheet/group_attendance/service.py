@@ -43,8 +43,11 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
             cast(Attendance.session_start, Date).label("session_date"),
         )
         .join(Attendance, Attendance.session_id == StudentAttendance.session_id)
-        .where(StudentAttendance.cti_id.in_(cti_ids))
-        .where(Attendance.session_start.between(start_date, end_date))
+        .where(
+            and_(StudentAttendance.cti_id.in_(cti_ids),
+                 Attendance.session_start.between(start_date, end_date)
+            )
+        )
     )
 
     attendance_frame = pandas.read_sql(attendance_query, eng)
