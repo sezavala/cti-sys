@@ -12,6 +12,7 @@ from src.students.attendance_entry.router import router as student_attendance_en
 from src.students.withdrawal_processing.router import router as student_withdrawal_router
 
 from src.gsheet.refresh.router import router as gsheet_refresh_router
+from src.gsheet.router import router as gsheet_router
 from src.utils.authorization import verify_api_key
 
 api_router = APIRouter(dependencies=[Depends(verify_api_key)])
@@ -90,5 +91,12 @@ api_router.include_router(
 api_router.include_router(
     gsheet_refresh_router,
     prefix="/gsheet/refresh",
+    tags=["GSheet"],
+)
+
+# /api/gsheet/...
+api_router.include_router(
+    gsheet_router,
+    prefix="/gsheet",
     tags=["GSheet"],
 )
