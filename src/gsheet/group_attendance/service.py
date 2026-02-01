@@ -72,6 +72,9 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
     # 3. Force EVERY cell value to a string, so no pandas.Timestamp leaks through
     final_df = final_df.astype(str)
 
+    print(final_df.dtypes)
+    print(type(final_df.index), type(final_df.columns[0]))
+    
     return final_df
 
 def fetch_cti_ids_from_sheet(spreadsheet_id: str, worksheet_name: str, gc: gspread.client.Client) -> List[int]:
