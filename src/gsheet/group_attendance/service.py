@@ -66,6 +66,8 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
 
     result_grid = result_grid.astype(str) 
 
+    print(result_grid.info())
+
     return result_grid
 
 def fetch_cti_ids_from_sheet(spreadsheet_id: str, worksheet_name: str, gc: gspread.client.Client) -> List[int]:
