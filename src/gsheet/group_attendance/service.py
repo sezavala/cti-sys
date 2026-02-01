@@ -53,28 +53,22 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
 
     attendance_frame["session_date"] = pandas.to_datetime(attendance_frame["session_date"])
 
+    
     for row in attendance_frame.itertuples(index=False):
         if row.cti_id in result_grid.index and row.session_date in result_grid.columns:
             result_grid.loc[row.cti_id, row.session_date] = True
     
-    # Reset index so cti_id becomes a normal column
     final_df = result_grid.reset_index()
 
-    # 1. Force headers to YYYY-MM-DD strings (or plain str for non-dates)
     final_df.columns = [
-        col.strftime('%Y-%m-%d') if hasattr(col, 'strftime') else str(col)
+        col.strftime("%Y-%m-%d") if hasattr(col, "strftime") else str(col)
         for col in final_df.columns
     ]
 
-    # 2. Ensure index is a simple RangeIndex and not a DatetimeIndex
     final_df.index = range(len(final_df))
 
-    # 3. Force EVERY cell value to a string, so no pandas.Timestamp leaks through
     final_df = final_df.astype(str)
 
-    print(final_df.dtypes)
-    print(type(final_df.index), type(final_df.columns[0]))
-    
     return final_df
 
 def fetch_cti_ids_from_sheet(spreadsheet_id: str, worksheet_name: str, gc: gspread.client.Client) -> List[int]:
