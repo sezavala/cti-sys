@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select, func, cast
+from sqlalchemy import select, func, cast, and_
 from sqlalchemy.orm import Session
 from sqlalchemy.engine import Engine
 from sqlalchemy.dialects.postgresql import array_agg
@@ -96,11 +96,16 @@ def fetch_cti_emails(eng: Engine, cti_ids: List[int]) -> Dict[int, str]:
             StudentEmail.cti_id,
             StudentEmail.email
         )
-        .where(StudentEmail.cti_id.in_(cti_ids))
+        .where(
+            and_(
+                StudentEmail.cti_id.in_(cti_ids),
+                StudentEmail.is_primary
+            )
+        )
     )
 
     email_frame = pandas.read_sql(attendance_query, eng)
-    print(email_frame)
+    print(email_frame.columns)
     for row in email_frame.iterrows():
         ids_to_email[row.cti_id] = row.email
 
