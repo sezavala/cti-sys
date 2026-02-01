@@ -45,7 +45,7 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         .join(Attendance, Attendance.session_id == StudentAttendance.session_id)
         .where(
             and_(StudentAttendance.cti_id.in_(cti_ids),
-                 cast(Attendance.session_start, date).between(start_date, end_date),
+                 cast(Attendance.session_start, Date).between(start_date, end_date),
             )
         )
     )
