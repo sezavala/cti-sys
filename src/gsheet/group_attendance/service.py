@@ -64,6 +64,8 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
         for col in result_grid.columns
     ]
 
+    result_grid = result_grid.fillna('') 
+
     result_grid.index = result_grid.index.astype(str)
 
     return result_grid
