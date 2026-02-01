@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select, func, cast, and_
+from sqlalchemy import select, func, cast, and_, Date
 from sqlalchemy.orm import Session
 from sqlalchemy.engine import Engine
 from sqlalchemy.dialects.postgresql import array_agg
@@ -40,7 +40,7 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
     attendance_query = (
         select(
             StudentAttendance.cti_id,
-            cast(Attendance.session_start, date).label("session_date"),
+            cast(Attendance.session_start, Date).label("session_date"),
         )
         .join(Attendance, Attendance.session_id == StudentAttendance.session_id)
         .where(StudentAttendance.cti_id.in_(cti_ids))
