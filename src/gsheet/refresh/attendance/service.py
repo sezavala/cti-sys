@@ -1,17 +1,13 @@
 from fastapi import HTTPException
-from sqlalchemy import select, func, cast
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.engine import Engine
 from sqlalchemy.dialects.postgresql import array_agg
 
-from src.database.postgres.models import Attendance, StudentAttendance, StudentEmail
+from src.database.postgres.models import Attendance
 import gspread
 import pandas
-import numpy as np
-from typing import List, Dict
-from datetime import date
 from src.config import settings
-
 
 def fetch_attendance(eng: Engine):
     """
