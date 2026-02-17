@@ -24,7 +24,62 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
     # 1) Build cti_id -> email mapping, defaulting to "NOT FOUND"
     id_to_email = fetch_cti_emails(eng, cti_ids)
 
-    # 2) All attendance rows for CTI ids and date ranges
+    # 2) Get all sessions in date range (even if no one attended)
+    sessions_query = (
+        select(
+            Attendance.session_id,
+            cast(Attendance.session_start, Date).label("session_date"),
+        )
+        .where(
+            cast(Attendance.session_start, Date).between(start_date, end_date)
+        )
+    )
+    sessions_frame = pandas.read_sql(sessions_query, eng)
+
+    # If there are no sessions in this range, just return cti_id + email
+    if sessions_frame.empty:
+        final_df = pandas.DataFrame(
+            [{"cti_id": cid, "email": id_to_email.get(cid, "NOT FOUND")} for cid in cti_ids]
+        )
+        final_df = final_df.astype(str)
+        final_df.index = range(len(final_df))
+        return final_df
+
+    sessions_frame["session_date"] = pandas.to_datetime(
+        sessions_frame["session_date"]
+    ).dt.date
+
+    # 3) Build session_id -> column_name mapping (enumerate per date)
+    by_date = (
+        sessions_frame[["session_id", "session_date"]]
+        .drop_duplicates()
+        .sort_values(["session_date", "session_id"])
+    )
+
+    session_cols: Dict[int, str] = {}
+    col_order: List[str] = []
+
+    for session_date, group in by_date.groupby("session_date", sort=True):
+        group = group.sort_values("session_id")
+        if len(group) == 1:
+            col_name = session_date.strftime("%Y-%m-%d")
+            sid = group["session_id"].iloc[0]
+            session_cols[sid] = col_name
+            col_order.append(col_name)
+        else:
+            for idx, sid in enumerate(group["session_id"], start=1):
+                col_name = f"{session_date.strftime('%Y-%m-%d')} - {idx}"
+                session_cols[sid] = col_name
+                col_order.append(col_name)
+
+    # 4) Build the full result grid (all False by default)
+    result_grid = pandas.DataFrame(
+        index=pandas.Index(cti_ids, name="cti_id"),
+        columns=col_order,
+        data=False,
+    )
+
+    # 5) Attendance rows (only present rows = attended)
     attendance_query = (
         select(
             StudentAttendance.cti_id,
@@ -39,70 +94,20 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
             )
         )
     )
-
     attendance_frame = pandas.read_sql(attendance_query, eng)
 
-    # 3) If there are no sessions in this range, return only cti_id + email
-    if attendance_frame.empty:
-        final_df = pandas.DataFrame(
-            [{"cti_id": cid, "email": id_to_email.get(cid, "NOT FOUND")} for cid in cti_ids]
-        )
-        final_df = final_df.astype(str)
-        final_df.index = range(len(final_df))
-        return final_df
+    # Mark True where they attended
+    if not attendance_frame.empty:
+        attendance_frame["col_name"] = attendance_frame["session_id"].map(session_cols)
+        attendance_frame = attendance_frame.dropna(subset=["col_name"])
 
-    # Normalize date
-    attendance_frame["session_date"] = pandas.to_datetime(
-        attendance_frame["session_date"]
-    ).dt.date
+        for row in attendance_frame.itertuples(index=False):
+            cid = row.cti_id
+            col = row.col_name
+            if cid in result_grid.index and col in result_grid.columns:
+                result_grid.at[cid, col] = True
 
-
-    # 4) if a date has only 1 session_id: 'YYYY-MM-DD'
-    #    else a date has N sessions: 'YYYY-MM-DD - 1', ..., 'YYYY-MM-DD - N'
-    by_date = (
-        attendance_frame[["session_id", "session_date"]]
-        .drop_duplicates()
-        .sort_values(["session_date", "session_id"])
-    )
-
-    session_cols = {}
-    col_order = []
-
-    # Loop through sessions dates and the session ids that occured on that date
-    for session_date, group in by_date.groupby("session_date", sort=True):
-        group = group.sort_values("session_id")
-        if len(group) == 1:
-            # Only one session this date
-            col_name = session_date.strftime("%Y-%m-%d")
-            sid = group["session_id"].iloc[0]
-            session_cols[sid] = col_name
-            col_order.append(col_name)
-        else:
-            # Multiple sessions on same date, enumerate
-            for idx, sid in enumerate(group["session_id"], start=1):
-                col_name = f"{session_date.strftime('%Y-%m-%d')} - {idx}"
-                session_cols[sid] = col_name
-                col_order.append(col_name)
-
-    # 5) Build the full result grid
-    result_grid = pandas.DataFrame(
-        index=pandas.Index(cti_ids, name="cti_id"),
-        columns=col_order,
-        data=False,
-    )
-
-    # 6) Mark True where they attended
-    attendance_frame["col_name"] = attendance_frame["session_id"].map(session_cols)
-    # Safety
-    attendance_frame = attendance_frame.dropna(subset=["col_name"])
-
-    for row in attendance_frame.itertuples(index=False):
-        cid = row.cti_id
-        col = row.col_name
-        if cid in result_grid.index and col in result_grid.columns:
-            result_grid.at[cid, col] = True
-
-    # 7) Attach email as first columns
+    # 6) Attach email and cti_id as first columns
     result_grid.insert(
         0,
         "email",
@@ -110,11 +115,9 @@ def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_id
     )
     result_grid.insert(0, "cti_id", result_grid.index)
 
-    # 8) Normalize to final form
+    # 7) Final form
     final_df = result_grid.reset_index(drop=True)
-
-    # Everything as string for gspread
-    final_df = final_df.astype(str)
+    final_df = final_df.astype(str)  # for gspread
 
     return final_df
 
