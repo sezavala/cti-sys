@@ -1,22 +1,19 @@
-from fastapi import HTTPException
-from sqlalchemy import select, func, cast, and_, Date
-from sqlalchemy.orm import Session
+from sqlalchemy import select, cast, and_, Date
 from sqlalchemy.engine import Engine
-from sqlalchemy.dialects.postgresql import array_agg
 
 from src.database.postgres.models import Attendance, StudentAttendance, StudentEmail
 import gspread
 import pandas
-import numpy as np
 from typing import List, Dict
 from datetime import date
-from src.config import settings
 
 def fetch_group_attendance(eng: Engine, start_date: date, end_date: date, cti_ids: Dict[int, str]):
     """
     Fetch attendance records and create an attendance matrix of select cti_ids and a date range,
     given the associated Accelerate tables
     @param eng: A SQLAlchemy Engine object that connects to the database
+    @param start_date and end_date: Starting and ending datetime object for lookup interval.
+    @param cti_ids: A dictionary of select
     """
     if not cti_ids:
         return pandas.DataFrame(columns=["cti_id", "email"])
@@ -146,7 +143,8 @@ def fetch_cti_ids_from_sheet(spreadsheet_id: str, worksheet_name: str, gc: gspre
                 # Skip
                 continue
     
-    worksheet.clear()
+    # Clear everything except the first 2 rows
+    worksheet.batch_clear(['C:ZZ'])
     
     return data
 
